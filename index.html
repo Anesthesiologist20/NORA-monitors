@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareWare Epic | Platinum Edition</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            /* CareWare Core Colors */
+            --cw-header: #1565C0;
+            --cw-banner: #E3F2FD;
+            --cw-table-head: #006064; /* Teal */
+            --cw-highlight: #FFF176;  /* Softer Yellow */
+            --cw-text: #263238;
+            --cw-border: #B0BEC5;
+            
+            /* Logic Colors */
+            --macro-btn: #673AB7;     /* Purple for Macros */
+            --evt-signin: #2E7D32;
+            --evt-timeout: #C62828;
+            --evt-std: #0277BD;
+            --evt-crisis: #FF3D00;    /* Bright Orange/Red for Crisis */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background-color: #ECEFF1; margin: 0; padding: 0 0 120px 0;
+            color: var(--cw-text); font-size: 13px;
+        }
+
+        .app-container {
+            background: white; max-width: 100%; margin: 20px auto;
+            border-radius: 6px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-top: 6px solid var(--cw-header);
+        }
+
+        /* --- HEADER --- */
+        .system-top-bar {
+            background: var(--cw-header); color: white; padding: 10px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        /* --- PATIENT BAR --- */
+        .patient-context-bar {
+            background: var(--cw-banner); border-bottom: 1px solid var(--cw-border);
+            padding: 10px 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+        }
+        .ctx-item { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #455A64; }
+        .ctx-input {
+            background: transparent; border: none; border-bottom: 2px solid #90A4AE;
+            width: 60px; text-align: center; font-weight: bold; color: #D84315;
+        }
+
+        /* --- SECTIONS --- */
+        .cw-card {
+            background: white; border: 1px solid var(--cw-border);
+            border-radius: 4px; margin: 15px; position: relative;
+            display: flex; flex-direction: column;
+        }
+        .cw-card-header {
+            background: #F5F7F8; padding: 8px 15px; font-weight: 700; color: #37474F;
+            border-bottom: 1px solid var(--cw-border); display: flex; justify-content: space-between; align-items: center;
+        }
+        .cw-body { padding: 15px; flex: 1; }
+        
+        /* --- GRID (SEPARATED BOXES STYLE) --- */
+        .table-wrap { overflow-x: auto; max-height: 60vh; background: #ECEFF1; /* Grey background for gaps */ padding-bottom: 1px; }
+        
+        table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 900px; }
+        
+        /* Sticky Header */
+        thead th {
+            background: var(--cw-table-head); color: white; padding: 8px;
+            border: 1px solid #004D40; text-align: center; position: sticky; top: 0; z-index: 20;
+        }
+        thead th:first-child { z-index: 40; background: var(--cw-table-head); color: white; text-align: center; border-left: 1px solid #004D40; }
+
+        /* General Cells */
+        td { border-right: 1px solid #CFD8DC; border-bottom: 1px solid #CFD8DC; height: 32px; padding: 0; text-align: center; background: white; }
+        td input { width: 100%; height: 100%; border: none; text-align: center; background: transparent; font-weight: 500; }
+        
+        /* Sticky Left Column */
+        th:first-child, td:first-child {
+            position: sticky; left: 0; z-index: 30; width: 180px; min-width: 180px;
+            background: #F9FAFB; border-right: 2px solid #B0BEC5;
+            text-align: left; padding-left: 10px; font-weight: 600; color: #37474F;
+        }
+
+        /* --- SECTION BOX HEADERS --- */
+        .section-header td {
+            background: #546E7A; color: white; font-weight: bold; text-align: left; 
+            padding: 5px 15px; letter-spacing: 1px; border: 1px solid #455A64;
+            position: sticky; left: 0; z-index: 35;
+        }
+        
+        /* Specific Section Colors */
+        .sec-vitals td { background: #FBC02D; color: #000; border-color: #F9A825; } /* Yellow */
+        .sec-gases td { background: #00897B; color: #fff; border-color: #00695C; } /* Teal */
+        .sec-meds td { background: #1E88E5; color: #fff; border-color: #1565C0; } /* Blue */
+        .sec-fluids td { background: #8E24AA; color: #fff; border-color: #7B1FA2; } /* Purple */
+
+        /* Spacer Rows ( The "Gap" ) */
+        .row-spacer td {
+            height: 15px; background-color: #ECEFF1; border: none;
+        }
+        .row-spacer td:first-child { background-color: #ECEFF1; border: none; }
+
+        /* --- MACROS & CONTROLS --- */
+        .macro-select {
+            padding: 4px; border-radius: 4px; border: 1px solid var(--macro-btn);
+            color: var(--macro-btn); font-weight: bold; font-size: 11px; cursor: pointer;
+        }
+        .interval-select {
+            padding: 4px; border-radius: 4px; border: 1px solid #546E7A;
+            color: #37474F; font-weight: bold; font-size: 11px; cursor: pointer;
+        }
+
+        #btnAddTime:disabled { background-color: #B0BEC5 !important; cursor: not-allowed; opacity: 0.7; }
+
+        /* --- TIMELINE FOOTER --- */
+        .timeline-footer {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: #263238; padding: 10px 20px;
+            display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.2); z-index: 999; overflow-x: auto;
+        }
+        .btn-event {
+            border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;
+            font-weight: bold; font-size: 11px; color: white; white-space: nowrap;
+            display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .btn-event:hover { transform: translateY(-2px); }
+        .btn-signin { background: var(--evt-signin); }
+        .btn-timeout { background: var(--evt-timeout); animation: pulse-red 2s infinite; }
+        .btn-crisis { background: var(--evt-crisis); animation: pulse-red 1s infinite; }
+        .btn-std { background: var(--evt-std); }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(198, 40, 40, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(198, 40, 40, 0); }
+        }
+
+        /* --- SMART LOG LIST CSS --- */
+        .event-log-box {
+            width: 100%; border: 1px solid #CFD8DC; border-radius: 3px; 
+            height: 150px; overflow-y: auto; background: #fff; padding: 5px;
+        }
+        .log-row {
+            display: flex; align-items: center; gap: 10px; padding: 6px 8px;
+            border-bottom: 1px dashed #eee; font-size: 12px;
+            transition: background-color 0.2s;
+        }
+        .log-row:hover { background-color: #F5F5F5; }
+        
+        .log-time-input {
+            width: 70px !important; padding: 2px !important; border: 1px solid #ddd !important;
+            border-radius: 3px; font-family: monospace; color: var(--cw-header); font-weight: bold;
+            font-size: 11px !important; background: #f9f9f9 !important; text-align: center;
+        }
+        .log-text-input {
+            flex: 1; border: none !important; background: transparent !important;
+            color: #333; font-size: 12px !important; text-align: left !important; padding: 0 !important;
+        }
+        
+        .delete-log { 
+            color: #90A4AE; cursor: pointer; padding: 5px; display: flex; 
+            align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s;
+        }
+        .delete-log:hover { color: #C62828; background-color: #FFEBEE; }
+
+        /* --- INPUTS & CHECKBOXES --- */
+        .row { display: flex; gap: 15px; margin-bottom: 10px; align-items: stretch; flex-wrap: wrap; }
+        .col { flex: 1; min-width: 140px; display: flex; flex-direction: column; justify-content: flex-end; }
+        .col.cw-card { margin: 0; height: auto; }
+        
+        label { display: block; font-size: 11px; font-weight: 700; color: #546E7A; margin-bottom: 4px; }
+        input, textarea, select {
+            width: 100%; padding: 6px; border: 1px solid #CFD8DC; border-radius: 3px; box-sizing: border-box;
+            font-family: inherit; font-size: 13px;
+        }
+        textarea { resize: vertical; }
+        
+        .check-group { display: flex; gap: 15px; align-items: center; background: #F5F5F5; padding: 5px 10px; border-radius: 4px; min-height: 30px; }
+        .check-item { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; }
+        .check-item input { width: 16px; height: 16px; accent-color: var(--cw-header); }
+
+        /* Small Button for Adding Rows */
+        .btn-mini-add {
+            background: white; border: 1px solid #1E88E5; color: #1E88E5; 
+            cursor: pointer; border-radius: 3px; font-size: 10px; padding: 1px 6px; margin-left: 10px;
+        }
+        .btn-mini-add:hover { background: #E3F2FD; }
+
+        /* --- PRINT --- */
+        @media print {
+            .timeline-footer, .no-print { display: none !important; }
+            .app-container { box-shadow: none; border: none; margin: 0; }
+            .table-wrap { overflow: visible; max-height: none; background: white; }
+            /* Hide spacers in print to save space, or keep for clarity? Let's keep small gap */
+            .row-spacer td { height: 5px; background-color: #fff !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            thead th { background-color: #006064 !important; color: white !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- HEADER -->
+        <div class="system-top-bar">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <i class="fas fa-hospital-symbol" style="font-size:22px;"></i>
+                <div>
+                    <div style="font-weight:bold;">CAREWARE ANESTHESIA</div>
+                    <div style="font-size:10px;">Ministry of Health - KSA</div>
+                </div>
+            </div>
+            <div class="no-print">
+                <button onclick="if(confirm('Clear all data?')) location.reload();" style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.5); color:white; padding:5px 10px; border-radius:4px; cursor:pointer;">
+                    <i class="fas fa-redo"></i> New Case
+                </button>
+            </div>
+        </div>
+
+        <!-- PATIENT BAR -->
+        <div class="patient-context-bar">
+            <div class="ctx-item">
+                <i class="fas fa-user-circle" style="font-size:20px; color:#1976D2;"></i>
+                <span>MRN/NAME:</span>
+                <input type="text" class="ctx-input" style="width:150px; text-align:left;" placeholder="Patient Name...">
+            </div>
+            <div class="ctx-item">
+                <span>AGE:</span> <input type="text" class="ctx-input" style="width:30px;">
+            </div>
+            <div class="ctx-item">
+                <span>WT (kg):</span> <input type="number" class="ctx-input" id="patWt" value="70"> 
+            </div>
+            <div class="ctx-item" style="color:#C62828; margin-left:auto;">
+                <i class="fas fa-exclamation-triangle"></i> ALLERGIES: <input type="text" class="ctx-input" style="width:100px; color:#C62828; border-color:#C62828;">
+            </div>
+        </div>
+
+        <!-- OPERATION DETAILS -->
+        <div class="cw-card">
+            <div class="cw-card-header">Case Details</div>
+            <div class="cw-body">
+                <div class="row">
+                    <div class="col">
+                        <div style="margin-bottom: 8px;">
+                            <label>Procedure Plan</label><input type="text" class="save-target" id="opProp" autocomplete="off">
+                        </div>
+                        <div>
+                            <label>Procedure Done</label><input type="text" class="save-target" id="opPerf" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div style="margin-bottom: 8px;">
+                            <label>Surgeon</label><input type="text" class="save-target" id="surgeon" autocomplete="off">
+                        </div>
+                        <div>
+                            <label>Assistant</label><input type="text" class="save-target" id="asst" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div style="margin-bottom: 8px;">
+                            <label>Anaesthetist</label><input type="text" class="save-target" id="anes" autocomplete="off">
+                        </div>
+                        <div>
+                            <label>Technician</label><input type="text" class="save-target" id="tech" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRE-PROCEDURE ASSESSMENT & AIRWAY -->
+        <div class="row" style="margin: 0 15px;">
+            <div class="col cw-card" style="margin: 0;">
+                <div class="cw-card-header"><span><i class="fas fa-notes-medical"></i> Assessment (Pre-Induction)</span></div>
+                <div class="cw-body">
+                    <div class="check-group" style="margin-bottom:15px;">
+                        <label class="check-item"><input type="checkbox"> Conscious</label>
+                        <label class="check-item"><input type="checkbox"> Sedated</label>
+                        <label class="check-item"><input type="checkbox"> Unconscious</label>
+                        <label class="check-item"><input type="checkbox"> Intubated</label>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div><label>BP (mmHg)</label><input type="text"></div>
+                        <div><label>Pulse (bpm)</label><input type="text"></div>
+                        <div><label>RR (/min)</label><input type="text"></div>
+                        <div><label>SpO2 (%)</label><input type="text"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col cw-card" style="margin: 0;">
+                <div class="cw-card-header"><span><i class="fas fa-lungs"></i> Airway Management</span></div>
+                <div class="cw-body">
+                    <div class="row">
+                        <div class="col">
+                            <label>Type</label>
+                            <div class="check-group">
+                                <label class="check-item"><input type="radio" name="at"> GA</label>
+                                <label class="check-item"><input type="radio" name="at"> Reg</label>
+                                <label class="check-item"><input type="radio" name="at"> Sed</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <label>Device</label>
+                            <div class="check-group">
+                                <label class="check-item"><input type="radio" name="dev"> ETT</label>
+                                <label class="check-item"><input type="radio" name="dev"> LMA</label>
+                                <input type="text" placeholder="Size" style="width:40px;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <label>Intubation</label>
+                            <div class="check-group">
+                                <label class="check-item"><input type="radio" name="int"> Oral</label>
+                                <label class="check-item"><input type="radio" name="int"> Nasal</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- THE SMART GRID -->
+        <div class="cw-card">
+            <div class="cw-card-header">
+                <span>Intra-Operative Monitoring</span>
+                <span class="no-print" style="font-size:10px; font-weight:normal; color:#666;">* Set Start Time & Interval</span>
+            </div>
+            
+            <div class="grid-toolbar no-print">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <select id="macroSelect" class="macro-select" onchange="applyMacro(this.value)">
+                        <option value="">⚡ Smart Macros</option>
+                        <option value="induction">💉 Standard Induction</option>
+                        <option value="emergence">🌅 Reversal/Emergence</option>
+                        <option value="hypotension">🔻 Hypotension Bolus</option>
+                    </select>
+                    
+                    <div style="width:1px; height:20px; background:#ccc;"></div>
+
+                    <select id="intervalSelect" class="interval-select" onchange="checkTimeButton()">
+                        <option value="" disabled selected>Select Interval</option>
+                        <option value="5">5 Min</option>
+                        <option value="10">10 Min</option>
+                        <option value="15">15 Min</option>
+                        <option value="30">30 Min</option>
+                    </select>
+
+                    <input type="time" id="gridStartTime" oninput="checkTimeButton()" style="width:80px; border:1px solid #ccc; border-radius:4px; padding:2px;">
+                    
+                    <button id="btnAddTime" onclick="addColumn()" disabled style="background:#2E7D32; color:white; border:none; padding:5px 15px; border-radius:3px; cursor:pointer; font-weight:bold;">
+                        <i class="fas fa-plus"></i> Add Time
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-wrap">
+                <table id="monitorTable">
+                    <thead>
+                        <tr id="headerRow">
+                            <th>Parameter</th>
+                        </tr>
+                    </thead>
+                    
+                    <!-- 1. VITALS SECTION -->
+                    <tbody id="tb-vitals">
+                        <tr class="section-header sec-vitals">
+                            <td><i class="fas fa-heartbeat"></i> VITAL SIGNS</td>
+                        </tr>
+                        <tr><td>SPO2 (%)</td></tr>
+                        <tr><td>ET CO2</td></tr>
+                        <tr><td>Heart Rate</td></tr>
+                        <tr><td>BP Systolic</td></tr>
+                        <tr><td>BP Diastolic</td></tr>
+                        <tr><td>Temp (°C)</td></tr>
+                    </tbody>
+
+                    <!-- SPACER -->
+                    <tbody><tr class="row-spacer"><td></td></tr></tbody>
+
+                    <!-- 2. GASES SECTION -->
+                    <tbody id="tb-gases">
+                        <tr class="section-header sec-gases">
+                            <td><i class="fas fa-wind"></i> GASES</td>
+                        </tr>
+                        <tr><td>O2 (L/min)</td></tr>
+                        <tr><td>N2O / Air</td></tr>
+                        <tr><td>Sevoflurane</td></tr>
+                    </tbody>
+
+                    <!-- SPACER -->
+                    <tbody><tr class="row-spacer"><td></td></tr></tbody>
+
+                    <!-- 3. MEDICATIONS SECTION -->
+                    <tbody id="tb-meds">
+                        <tr class="section-header sec-meds">
+                            <td style="display:flex; justify-content:space-between; align-items:center;">
+                                <span><i class="fas fa-pills"></i> MEDICATIONS</span>
+                                <button onclick="addDrugRow()" class="no-print btn-mini-add" title="Add Drug"><i class="fas fa-plus"></i> Row</button>
+                            </td>
+                        </tr>
+                        <tr data-drug="propofol"><td>Propofol (mg)</td></tr>
+                        <tr data-drug="fentanyl"><td>Fentanyl (mcg)</td></tr>
+                        <tr data-drug="roc"><td>Rocuronium (mg)</td></tr>
+                        <tr data-drug="ephedrine"><td>Ephedrine (mg)</td></tr>
+                        <tr data-drug="neo"><td>Neostigmine (mg)</td></tr>
+                        <tr data-drug="glyco"><td>Glyco (mg)</td></tr>
+                    </tbody>
+
+                    <!-- SPACER -->
+                    <tbody><tr class="row-spacer"><td></td></tr></tbody>
+
+                    <!-- 4. FLUIDS SECTION -->
+                    <tbody id="tb-fluids">
+                        <tr class="section-header sec-fluids">
+                            <td><i class="fas fa-tint"></i> FLUIDS & OUTPUT</td>
+                        </tr>
+                        <tr><td>Fluids (ml)</td></tr>
+                        <tr style="font-weight:700; color:#C62828;"><td>Blood Loss (ml)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SAFETY & RECOVERY -->
+        <div class="row" style="margin: 0 15px;">
+            <div class="col cw-card" style="margin: 0;">
+                <div class="cw-card-header"><span><i class="fas fa-shield-alt"></i> Safety Checks</span></div>
+                <div class="cw-body">
+                    <div class="check-group" style="margin-bottom:15px; flex-wrap:wrap;">
+                        <label class="check-item"><input type="checkbox"> Eyes Taped</label>
+                        <label class="check-item"><input type="checkbox"> Pressure Points</label>
+                        <label class="check-item"><input type="checkbox"> Warmer On</label>
+                        <label class="check-item"><input type="checkbox"> DVT Prophy</label>
+                    </div>
+                    <div style="border-top:1px dashed #CFD8DC; padding-top:10px;">
+                        <div class="row">
+                            <div class="col"><label>Tourniquet Time</label><input type="number"></div>
+                            <div class="col"><label>Pressure</label><input type="number"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col cw-card" style="margin: 0;">
+                <div class="cw-card-header"><span><i class="fas fa-bed"></i> Recovery Room (PACU)</span></div>
+                <div class="cw-body">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                        <div><label>BP</label><input type="text"></div>
+                        <div><label>HR</label><input type="text"></div>
+                        <div><label>RR</label><input type="text"></div>
+                        <div><label>Sat</label><input type="text"></div>
+                    </div>
+                    <div style="border-top:1px dashed #CFD8DC; padding-top:10px;">
+                        <label>Aldrete Score</label>
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <input type="number" style="width:60px; font-weight:bold; font-size:16px; text-align:center;"> / 10
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOG & SIGNATURE -->
+        <div class="cw-card">
+            <div style="padding:15px;">
+                <label>Timeline Log (Auto-Sorting)</label>
+                <div id="eventLogContainer" class="event-log-box">
+                    <div style="color:#aaa; font-style:italic; padding:10px; text-align:center;">No events recorded yet. Click timeline buttons below.</div>
+                </div>
+
+                <div style="margin-top:15px;">
+                    <label>General Comments / Remarks</label>
+                    <textarea style="height:60px; width:100%; border:1px solid #CFD8DC; border-radius:3px;"></textarea>
+                </div>
+                
+                <div class="row" style="margin-top:15px;">
+                    <div class="col"><label>Anesthetist Name</label><input type="text"></div>
+                    <div class="col"><label>Signature</label><input type="text" style="font-family:'Brush Script MT', cursive; font-size:20px; color:#1565C0;"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TIMELINE FOOTER -->
+    <div class="timeline-footer no-print">
+        <div style="color:#B0BEC5; font-weight:bold; font-size:10px; margin-right:5px;">TIMELINE LOG:</div>
+        
+        <button class="btn-event btn-signin" onclick="logAction('✅ SIGN IN Complete')">
+            <i class="fas fa-clipboard-check"></i> Sign In
+        </button>
+        
+        <button class="btn-event btn-timeout" onclick="logAction('🛑 TIME OUT Performed')">
+            <i class="fas fa-hand-paper"></i> Time Out
+        </button>
+
+        <div style="width:1px; height:20px; background:#546E7A; margin:0 5px;"></div>
+
+        <button class="btn-event btn-std" onclick="logAction('💉 Induction Started')">Induction</button>
+        
+        <button class="btn-event btn-std" onclick="logAction('ETT Intubation')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 3h6" />
+              <path d="M9 3v10c0 3.866 3.134 7 7 7h3" />
+            </svg> Intubation
+        </button>
+
+        <button class="btn-event btn-std" onclick="logAction('🟢 LMA Insertion')">LMA Insert</button>
+        <button class="btn-event btn-std" onclick="logAction('🔪 Knife on Skin')">Incision</button>
+        <button class="btn-event btn-std" onclick="logAction('🔴 LMA Removal')">LMA Remove</button>
+        <button class="btn-event btn-std" onclick="logAction('😮 Extubation')">Extubation</button>
+        
+        <div style="width:1px; height:20px; background:#546E7A; margin:0 5px;"></div>
+
+        <button class="btn-event btn-crisis" onclick="logAction('⚠️ CRISIS EVENT DECLARED')">
+            <i class="fas fa-exclamation-triangle"></i> CRISIS
+        </button>
+
+        <div style="width:1px; height:20px; background:#546E7A; margin:0 5px;"></div>
+
+        <button class="btn-event btn-signin" onclick="logAction('✅ SIGN OUT Complete')">Sign Out</button>
+        <button class="btn-event btn-std" onclick="window.print()" style="margin-left:auto; background:#455A64;">
+            <i class="fas fa-print"></i> Print
+        </button>
+    </div>
+
+    <script>
+        // --- 1. SMART GRID LOGIC ---
+        function checkTimeButton() {
+            const timeVal = document.getElementById('gridStartTime').value;
+            const intVal = document.getElementById('intervalSelect').value;
+            const btn = document.getElementById('btnAddTime');
+            
+            if(timeVal && intVal) {
+                btn.disabled = false;
+            } else {
+                btn.disabled = true;
+            }
+        }
+
+        function addColumn() {
+            const headerRow = document.getElementById('headerRow');
+            const startTime = document.getElementById('gridStartTime').value;
+            const intervalVal = parseInt(document.getElementById('intervalSelect').value); 
+            
+            // Auto-Time Calculation
+            let label = "";
+            if (headerRow.cells.length === 1) {
+                label = startTime;
+            } else {
+                const lastTime = headerRow.cells[headerRow.cells.length-1].innerText;
+                let [h, m] = lastTime.split(':').map(Number);
+                let date = new Date(); date.setHours(h); date.setMinutes(m + intervalVal);
+                label = `${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+            }
+
+            // Create Header
+            const th = document.createElement('th');
+            th.innerText = label; th.contentEditable = true;
+            headerRow.appendChild(th);
+
+            // Add cells to ALL separate tbodies
+            const tbodies = document.querySelectorAll('#monitorTable tbody');
+            
+            tbodies.forEach(tbody => {
+                // Skip spacer rows
+                if (tbody.querySelector('.row-spacer')) return;
+
+                const rows = tbody.rows;
+                for(let row of rows) {
+                    // Skip Section Header Rows (Expand Colspan)
+                    if(row.classList.contains('section-header')) {
+                        row.cells[0].colSpan = headerRow.cells.length;
+                        continue;
+                    }
+                    const cell = row.insertCell(-1);
+                    const input = document.createElement('input');
+                    input.type = "text";
+                    cell.appendChild(input);
+                }
+            });
+        }
+
+        // --- 2. MACROS ---
+        function applyMacro(type) {
+            const headerRow = document.getElementById('headerRow');
+            if(headerRow.cells.length <= 1) {
+                alert("Please add a time column first!");
+                document.getElementById('macroSelect').value = "";
+                return;
+            }
+
+            const colIndex = headerRow.cells.length - 1; 
+            const weight = parseFloat(document.getElementById('patWt').value) || 70;
+
+            let drugs = {};
+            if(type === 'induction') {
+                drugs = {
+                    'propofol': Math.round(weight * 2),
+                    'fentanyl': Math.round(weight * 1.5),
+                    'roc': Math.round(weight * 0.6)
+                };
+                logAction(`💉 Macro: Induction (Wt: ${weight}kg)`);
+            } else if (type === 'emergence') {
+                drugs = { 'neo': '2.5', 'glyco': '0.4' };
+                logAction(`🌅 Macro: Reversal`);
+            } else if (type === 'hypotension') {
+                drugs = { 'ephedrine': '5' };
+                logAction(`🔻 Macro: Ephedrine Bolus`);
+            }
+
+            // Iterate through TB-MEDS
+            const medRows = document.getElementById('tb-meds').rows;
+            for(let row of medRows) {
+                const drugKey = row.getAttribute('data-drug');
+                if(drugKey && drugs[drugKey]) {
+                    // colIndex should map to table cells. 
+                    // Warning: Table structure changed with multiple tbodies. 
+                    // row.cells[colIndex] might be correct IF all rows have same cell count
+                    const input = row.cells[colIndex].querySelector('input');
+                    if(input) {
+                        input.value = drugs[drugKey];
+                        input.classList.add('dose-filled');
+                        setTimeout(() => input.classList.remove('dose-filled'), 1000);
+                    }
+                }
+            }
+            document.getElementById('macroSelect').value = "";
+        }
+
+        // --- 3. SMART EVENT LOGGER ---
+        let timelineEvents = [];
+
+        function logAction(text) {
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            timelineEvents.push({ id: Date.now(), time: timeStr, text: text });
+            renderTimeline();
+        }
+
+        function renderTimeline() {
+            timelineEvents.sort((a, b) => a.time.localeCompare(b.time));
+            const container = document.getElementById('eventLogContainer');
+            container.innerHTML = '';
+
+            if(timelineEvents.length === 0) {
+                container.innerHTML = '<div style="color:#aaa; font-style:italic; padding:10px; text-align:center;">No events recorded.</div>';
+                return;
+            }
+
+            timelineEvents.forEach(evt => {
+                const row = document.createElement('div');
+                row.className = 'log-row';
+                row.innerHTML = `
+                    <input type="time" value="${evt.time}" onchange="updateEventTime(${evt.id}, this.value)" class="log-time-input">
+                    <input type="text" value="${evt.text}" onchange="updateEventText(${evt.id}, this.value)" class="log-text-input">
+                    <span class="delete-log" onclick="deleteEvent(${evt.id})" title="Delete entry">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </span>
+                `;
+                container.appendChild(row);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function updateEventTime(id, newTime) {
+            const evt = timelineEvents.find(e => e.id === id);
+            if(evt) { evt.time = newTime; renderTimeline(); }
+        }
+
+        function updateEventText(id, newText) {
+            const evt = timelineEvents.find(e => e.id === id);
+            if(evt) evt.text = newText;
+        }
+
+        function deleteEvent(id) {
+            if(confirm("Remove this event?")) {
+                timelineEvents = timelineEvents.filter(e => e.id !== id);
+                renderTimeline();
+            }
+        }
+
+        // --- 4. ADD DRUG ROW ---
+        function addDrugRow() {
+            const tbody = document.getElementById('tb-meds');
+            const headerRow = document.getElementById('headerRow');
+            const colCount = headerRow.cells.length;
+
+            const newRow = document.createElement('tr');
+            
+            // Label Cell
+            const cell1 = document.createElement('td');
+            const input = document.createElement('input');
+            input.type = "text";
+            input.placeholder = "New Drug...";
+            input.style.fontWeight = "bold";
+            input.style.textAlign = "left";
+            input.style.paddingLeft = "5px";
+            input.style.color = "#1565C0";
+            cell1.appendChild(input);
+            newRow.appendChild(cell1);
+
+            // Time Cells (starting from 1)
+            for(let i = 1; i < colCount; i++) {
+                const cell = newRow.insertCell(-1);
+                const valInput = document.createElement('input');
+                valInput.type = "text";
+                cell.appendChild(valInput);
+            }
+
+            tbody.appendChild(newRow);
+        }
+    </script>
+</body>
+</html>
